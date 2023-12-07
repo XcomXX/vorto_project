@@ -1,5 +1,10 @@
+import files.LoadsFileReader;
+import model.Load;
+
+import java.util.List;
+
 public class Main {
     public static void main(String[] args) {
-        System.out.println("Hello world!");
+        List<Load> loads = LoadsFileReader.readLoads(args[0]);
     }
 }
