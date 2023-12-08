@@ -9,6 +9,8 @@ public class Load {
     private final Point pickup;
     private final Point dropoff;
     private final double routeLength;
+    private final double fromZeroLength;
+    private final double toZeroLength;
     private boolean isOutDirection;
     private PointLocation pickupLocation;
     private PointLocation dropoffLocation;
@@ -23,6 +25,8 @@ public class Load {
         setIsOutDirection();
         this.pickupLocation = getPointLocation(pickup);
         this.dropoffLocation = getPointLocation(dropoff);
+        this.fromZeroLength = Utils.countDistanceToZero(pickup);
+        this.toZeroLength = Utils.countDistanceToZero(dropoff);
     }
 
     public int getLoadNumber() {
@@ -51,6 +55,14 @@ public class Load {
 
     public PointLocation getDropoffLocation() {
         return dropoffLocation;
+    }
+
+    public double getFromZeroLength() {
+        return fromZeroLength;
+    }
+
+    public double getToZeroLength() {
+        return toZeroLength;
     }
 
     private void setIsOutDirection() {

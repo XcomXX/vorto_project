@@ -7,6 +7,8 @@ import java.util.*;
 public class Graph {
     private final Map<Integer, Map<Double, Integer>> adjacencyMap = new HashMap<>();
     private final List<Load> loads;
+    private final int loadsSize;
+    private final Load zeroLoad;
     private final Map<PointLocation, Set<Load>> pickupGroups = new HashMap<>() {{
         put(PointLocation.PLUS_PLUS, new HashSet<>());
         put(PointLocation.PLUS_MINUS, new HashSet<>());
@@ -25,6 +27,8 @@ public class Graph {
         Point zeroPoint = new Point(0, 0);
         Load zeroLoad = new Load(0, zeroPoint, zeroPoint);
         loads.add(0, zeroLoad);
+        this.zeroLoad = zeroLoad;
+        this.loadsSize = loads.size();
         for (Load load: loads) {
             fillNeighbors(load);
             fillGroups(load);
@@ -33,11 +37,15 @@ public class Graph {
 
     private void fillGroups(Load loadToFill) {
         pickupGroups.merge(loadToFill.getPickupLocation(), new HashSet<>(Set.of(loadToFill)), (oldS, newS) -> {
-            oldS.addAll(newS);
+            if (!newS.contains(zeroLoad)) {
+                oldS.addAll(newS);
+            }
             return oldS;
         });
         dropoffGroups.merge(loadToFill.getDropoffLocation(), new HashSet<>(Set.of(loadToFill)), (oldS, newS) -> {
-            oldS.addAll(newS);
+            if (!newS.contains(zeroLoad)) {
+                oldS.addAll(newS);
+            }
             return oldS;
         });
     }
@@ -57,5 +65,25 @@ public class Graph {
 
     public Map<Integer, Map<Double, Integer>> getAdjacencyMap() {
         return adjacencyMap;
+    }
+
+    public int getLoadsSize() {
+        return loadsSize;
+    }
+
+    public Map<PointLocation, Set<Load>> getPickupGroups() {
+        return pickupGroups;
+    }
+
+    public Map<PointLocation, Set<Load>> getDropoffGroups() {
+        return dropoffGroups;
+    }
+
+    public Load getZeroLoad() {
+        return zeroLoad;
+    }
+
+    public List<Load> getLoads() {
+        return loads;
     }
 }
