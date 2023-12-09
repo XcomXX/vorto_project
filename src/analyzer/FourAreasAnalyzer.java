@@ -28,13 +28,13 @@ public class FourAreasAnalyzer implements Analyzer {
     private List<Integer> countDriverLoads() {
         List<Integer> loads = new ArrayList<>();
         Load currentLoad = graph.getZeroLoad();
-        Load nextLoad = null;
+        Load nextLoad;
         double driverShift = ZERO_SHIFT;
         Optional<Map.Entry<PointLocation, Set<Load>>> optional = graph.getPickupGroups().entrySet()
                 .stream()
                 .max(Comparator.comparingInt(e -> e.getValue().size()));
         PointLocation startRegion = optional.map(Map.Entry::getKey).orElse(null);
-        do {
+        while (true) {
             nextLoad = getNextLoad(currentLoad, driverShift, startRegion);
             if (nextLoad == null) {
                 break;
@@ -45,7 +45,7 @@ public class FourAreasAnalyzer implements Analyzer {
             removeFromPickupGroup(currentLoad);
             startRegion = currentLoad.getDropoffLocation();
             visited.add(currentLoad.getLoadNumber());
-        } while (nextLoad != null);
+        }
         return loads;
     }
 
@@ -53,19 +53,19 @@ public class FourAreasAnalyzer implements Analyzer {
         if (currentRegion == null) {
             throw new RuntimeException("Current region can't be null");
         }
-        Load returnLoad = null;
-        returnLoad = getNextLoad(currentLoad, true, currentRegion, currentRegion);
-        returnLoad = getReturnLoadWithValidation(currentLoad, returnLoad, driverShift);
-        if (returnLoad != null) {
-            return returnLoad;
+        Load nextLoad;
+        nextLoad = getNextLoad(currentLoad, true, currentRegion, currentRegion);
+        nextLoad = getLoadWithReturnValidation(currentLoad, nextLoad, driverShift);
+        if (nextLoad != null) {
+            return nextLoad;
         }
-        returnLoad = getNextLoad(currentLoad, false, currentRegion, currentRegion);
-        returnLoad = getReturnLoadWithValidation(currentLoad, returnLoad, driverShift);
-        if (returnLoad != null) {
-            return returnLoad;
+        nextLoad = getNextLoad(currentLoad, false, currentRegion, currentRegion);
+        nextLoad = getLoadWithReturnValidation(currentLoad, nextLoad, driverShift);
+        if (nextLoad != null) {
+            return nextLoad;
         }
-        returnLoad = getClosestValidLoad(currentLoad, driverShift);
-        return returnLoad;
+        nextLoad = getClosestValidLoad(currentLoad, driverShift);
+        return nextLoad;
     }
 
     private Load getClosestValidLoad(Load currentLoad, double driverShift) {
@@ -81,31 +81,53 @@ public class FourAreasAnalyzer implements Analyzer {
         return null;
     }
 
-    private Load getReturnLoadWithValidation(Load currentLoad, Load returnLoad, double driverShift) {
-        if (returnLoad != null) {
-            if (isValidTimeShift(currentLoad, returnLoad, driverShift)) {
-                return returnLoad;
+    private Load getLoadWithReturnValidation(Load currentLoad, Load nextLoad, double driverShift) {
+        if (nextLoad != null) {
+            if (isValidTimeShift(currentLoad, nextLoad, driverShift)) {
+                return nextLoad;
             }
         }
         return null;
     }
 
     private boolean isValidTimeShift(Load currentLoad, Load nextLoad, double driverShift) {
-        return (driverShift + nextLoad.getRouteLength() + nextLoad.getToZeroLength()) < SHIFT_DURATION;
+        return (driverShift + Utils.countDistance(currentLoad.getDropoff(), nextLoad.getPickup()) + nextLoad.getRouteLength() + nextLoad.getToZeroLength()) < SHIFT_DURATION;
     }
 
     private Load getNextLoad(Load currentLoad, boolean isOutDirection, PointLocation pickUpRegion, PointLocation dropoffRegion) {
+        List<Load> closestList = new ArrayList<>();
+
         for (Map.Entry<Double, Integer> curLoad: graph.getAdjacencyMap().get(currentLoad.getLoadNumber()).entrySet()) {
             Load cLoad = graph.getLoads().get(curLoad.getValue());
             if (visited.contains(cLoad.getLoadNumber())) {
                 continue;
             }
-            if (cLoad.isOutDirection() == isOutDirection && cLoad.getPickupLocation() == pickUpRegion && cLoad.getDropoffLocation() == dropoffRegion) {
-                return cLoad;
-            }
-
+            closestList.add(cLoad);
         }
-        return null;
+        if (closestList.isEmpty()) {
+            return null;
+        }
+        Optional<Load> filteredList = closestList.stream()
+                .filter(v -> {
+                    if (isOutDirection) {
+                        return v.isOutDirection();
+                    } else {
+                        return true;
+                    }})
+                .filter(v -> {
+                    if (pickUpRegion != null) {
+                        return v.getPickupLocation() == pickUpRegion;
+                    } else {
+                        return true;
+                    }})
+                .filter(v -> {
+                    if (dropoffRegion != null) {
+                        return v.getDropoffLocation() == dropoffRegion;
+                    } else {
+                        return true;
+                    }
+                }).findFirst();
+        return filteredList.orElse(null);
     }
 
     private void removeFromPickupGroup(Load load) {
