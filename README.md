@@ -21,5 +21,6 @@ clone the project from the public Github repo `https://github.com/XcomXX/vorto_p
 Go to `vorto_project/src`
 Run the command in a terminal window `javac -d ../out *.java`
 ### Run the project
-Run the command in a terminal window `java -cp pathToOutDir Main pathToFolderWithTests/test.txt`
+Copy test files from google drive `https://drive.google.com/drive/folders/1Qfvje75ZukO5z0XfIRXhr59ZIiOrhFb2`
+Run the command in a terminal window `java -cp pathToProjectOutDir Main pathToFolderWithTests/test.txt`
 For example `java -cp /Users/joe/projects/vorto_project/out Main /Users/joe/vorto_tests/problem8.txt`
